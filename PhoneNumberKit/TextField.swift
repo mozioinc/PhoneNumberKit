@@ -34,7 +34,7 @@ public class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     
     var partialFormatter = PartialFormatter()
     
-    let nonNumericSet: NSCharacterSet = {
+    static let nonNumericSet: NSCharacterSet = {
         var mutableSet = NSCharacterSet.decimalDigitCharacterSet().invertedSet.mutableCopy() as! NSMutableCharacterSet
         mutableSet.removeCharactersInString(PhoneNumberConstants.plusChars)
         return mutableSet
@@ -110,19 +110,20 @@ public class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     *  To keep the cursor position, we find the character immediately after the cursor and count the number of times it repeats in the remaining string as this will remain constant in every kind of editing.
     */
     
-    internal struct CursorPosition {
+    struct CursorPosition {
         let numberAfterCursor: String
         let repetitionCountFromEnd: Int
     }
     
-    internal func extractCursorPosition() -> CursorPosition? {
+    static func extractCursorPosition(textfield: UITextField) -> CursorPosition? {
         var repetitionCountFromEnd = 0
         // Check that there is text in the UITextField
-        guard let text = text, let selectedTextRange = selectedTextRange else {
+        guard let text = textfield.text, let selectedTextRange = textfield.selectedTextRange else {
             return nil
         }
         let textAsNSString = text as NSString
-        let cursorEnd = offsetFromPosition(beginningOfDocument, toPosition: selectedTextRange.end)
+        let cursorEnd = textfield.offsetFromPosition(textfield.beginningOfDocument, toPosition: selectedTextRange.end)
+        
         // Look for the next valid number after the cursor, when found return a CursorPosition struct
         for i in cursorEnd ..< textAsNSString.length  {
             let cursorRange = NSMakeRange(i, 1)
@@ -141,10 +142,10 @@ public class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     }
     
     // Finds position of previous cursor in new formatted text
-    internal func selectionRangeForNumberReplacement(textField: UITextField, formattedText: String) -> NSRange? {
+    internal static func selectionRangeForNumberReplacement(textField: UITextField, formattedText: String) -> NSRange? {
         let textAsNSString = formattedText as NSString
         var countFromEnd = 0
-        guard let cursorPosition = extractCursorPosition() else {
+        guard let cursorPosition = extractCursorPosition(textField) else {
             return nil
         }
         
@@ -163,15 +164,14 @@ public class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     }
     
     public func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String) -> Bool {
-        guard let text = text else {
+        return PhoneNumberTextField.textField(textField, shouldChangeCharactersInRange: range, replacementString: string, partialFormatter: partialFormatter)
+    }
+    
+    public static func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String, partialFormatter: PartialFormatter) -> Bool {
+        guard let text = textField.text else {
             return false
         }
-
-        // allow delegate to intervene
-        guard _delegate?.textField?(textField, shouldChangeCharactersInRange: range, replacementString: string) ?? true else {
-            return false
-        }
-
+        
         let textAsNSString = text as NSString
         let changedRange = textAsNSString.substringWithRange(range) as NSString
         let modifiedTextField = textAsNSString.stringByReplacingCharactersInRange(range, withString: string)
@@ -188,12 +188,12 @@ public class PhoneNumberTextField: UITextField, UITextFieldDelegate {
             selectedTextRange = selectionRangeForNumberReplacement(textField, formattedText: formattedNationalNumber)
             textField.text = formattedNationalNumber
         }
-        sendActionsForControlEvents(.EditingChanged)
-        if let selectedTextRange = selectedTextRange, let selectionRangePosition = textField.positionFromPosition(beginningOfDocument, offset: selectedTextRange.location) {
+        textField.sendActionsForControlEvents(.EditingChanged)
+        if let selectedTextRange = selectedTextRange, let selectionRangePosition = textField.positionFromPosition(textField.beginningOfDocument, offset: selectedTextRange.location) {
             let selectionRange = textField.textRangeFromPosition(selectionRangePosition, toPosition: selectionRangePosition)
             textField.selectedTextRange = selectionRange
         }
-
+        
         return false
     }
     
