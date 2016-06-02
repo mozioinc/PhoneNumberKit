@@ -15,7 +15,7 @@ public class PartialFormatter {
     let parser = PhoneNumberParser()
     let regex = RegularExpressions.sharedInstance
     
-    var defaultRegion: String {
+    public var defaultRegion: String {
         didSet {
             updateMetadataForDefaultRegion()
         }
@@ -35,7 +35,7 @@ public class PartialFormatter {
     var prefixBeforeNationalNumber =  String()
     var shouldAddSpaceAfterNationalPrefix = false
     
-    var withPrefix = true
+    public var withPrefix = true
     
     //MARK: Status
 
