@@ -208,25 +208,12 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     
     public static func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String, partialFormatter: PartialFormatter) -> Bool {
         
-        guard let textField = textField as? PhoneNumberTextField else {
-            return false
-        }
-        
         guard let text = textField.text else {
             return false
         }
 
         // This allows for the case when a user autocompletes a phone number:
         if range == NSRange(location: 0, length: 0) && string == " " {
-            return true
-        }
-
-        // allow delegate to intervene
-        guard textField._delegate?.textField?(textField, shouldChangeCharactersIn: range, replacementString: string) ?? true else {
-            return false
-        }
-        
-        if !textField.isPartialFormatterEnabled {
             return true
         }
         
